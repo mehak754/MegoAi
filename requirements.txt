@@ -15,7 +15,8 @@ glob
 os 
 google.generativeai 
 webbrowser 
-random dotenv
+random 
+dotenv
 load_dotenv 
 datetime 
 subprocess
