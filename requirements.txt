@@ -8,3 +8,4 @@ matplotlib
 requests
 google-generativeai==0.7.2
 flask-cors==4.0.0
+speech_recognition
