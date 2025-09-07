@@ -1,6 +1,4 @@
-flask
-flask-cors
-openai
+Flask
 python-dotenv
-jsonify
-reques
+google-generativeai
+gunicorn
