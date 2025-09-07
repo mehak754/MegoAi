@@ -1,1 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Futuristic Virtual Assistant - Megoai</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
 
+  body {
+    margin: 0;
+    background: #0f0f1a;
+    color: #00ffea;
+    font-family: 'Orbitron', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    background: linear-gradient(90deg, #00ffea, #005f6a);
+    padding: 1rem 2rem;
+    text-align: center;
+    font-size: 2rem;
+    letter-spacing: 0.1em;
+    box-shadow: 0 0 15px #00ffea;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .chat-container {
+    background: #121224;
+    border: 2px solid #00ffea;
+    border-radius: 15px;
+    width: 400px;
+    max-width: 90vw;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 20px #00ffea;
+  }
+
+  .chat-header {
+    padding: 1rem;
+    border-bottom: 1px solid #00ffea;
+    font-weight: 700;
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  .chat-messages {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .message {
+    max-width: 75%;
+    padding: 0.75rem 1rem;
+    border-radius: 15px;
+    font-size: 1rem;
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+
+  .message.user {
+    background: #00ffea;
+    color: #0f0f1a;
+    align-self: flex-end;
+    border-bottom-right-radius: 0;
+    box-shadow: 0 0 10px #00ffea;
+  }
+
+  .message.assistant {
+    background: #003f4a;
+    color: #00ffea;
+    align-self: flex-start;
+    border-bottom-left-radius: 0;
+    box-shadow: 0 0 10px #005f6a;
+  }
+
+  .chat-input-area {
+    display: flex;
+    border-top: 1px solid #00ffea;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background: #0f0f1a;
+    color: #00ffea;
+    font-size: 1rem;
+    font-family: 'Orbitron', sans-serif;
+    outline: none;
+    border-radius: 0 0 0 15px;
+  }
+
+  button {
+    background: #00ffea;
+    border: none;
+    color: #0f0f1a;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    border-radius: 0 0 15px 0;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background: #00ccbb;
+  }
+
+  /* Microphone button */
+  #micButton {
+    background: #00ffea;
+    border: none;
+    color: #0f0f1a;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 0 1rem;
+    cursor: pointer;
+    border-radius: 0 0 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+  }
+
+  #micButton.listening {
+    background: #ff4b5c;
+    color: white;
+  }
+
+  /* Scrollbar styling */
+  .chat-messages::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .chat-messages::-webkit-scrollbar-track {
+    background: #121224;
+  }
+
+  .chat-messages::-webkit-scrollbar-thumb {
+    background: #00ffea;
+    border-radius: 4px;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .chat-container {
+      height: 80vh;
+    }
+  }
+</style>
+</head>
+<body>
+<header>VIRTUAL ASSISTANT - MEGOAI</header>
+<main>
+  <div class="chat-container" role="main" aria-label="Chat with your virtual assistant">
+    <div class="chat-header">Ask me anything</div>
+    <div class="chat-messages" id="chatMessages" aria-live="polite" aria-relevant="additions"></div>
+    <form id="chatForm" class="chat-input-area" aria-label="Send message form">
+      <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" required aria-required="true" />
+      <button type="submit" aria-label="Send message">Send</button>
+      <button type="button" id="micButton" aria-label="Start voice input" title="Click to speak">🤖</button>
+    </form>
+  </div>
+</main>
+
+<script>
+// Add message to chat window
+function addMessage(text, sender) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', sender);
+    messageDiv.textContent = text;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Fetch assistant response from backend
+async function getAssistantResponse(userText) {
+    try {
+        const response = await fetch('http://localhost:5000/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userText })
+        });
+        const data = await response.json();
+        return data.response;
+    } catch (error) {
+        console.error('Error fetching assistant response:', error);
+        return "Sorry, I couldn't reach the assistant service. Make sure the Python backend is running.";
+    }
+}
+
+const chatForm = document.getElementById('chatForm');
+const userInput = document.getElementById('userInput');
+const micButton = document.getElementById('micButton');
+
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userText = userInput.value.trim();
+    if (!userText) return;
+
+    addMessage(userText, 'user');
+    userInput.value = '';
+    userInput.disabled = true;
+
+    const response = await getAssistantResponse(userText);
+    addMessage(response, 'assistant');
+    userInput.disabled = false;
+    userInput.focus();
+
+    if (response.includes('Goodbye')) {
+        console.log('Exiting...');
+    }
+});
+
+// Speech recognition setup
+let recognition;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+        micButton.classList.add('listening');
+        micButton.title = "Listening... Click to stop.";
+    };
+
+    recognition.onend = () => {
+        micButton.classList.remove('listening');
+        micButton.title = "Click to speak";
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        micButton.classList.remove('listening');
+        micButton.title = "Click to speak";
+        alert('Speech recognition error: ' + event.error);
+    };
+
+    recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        addMessage(transcript, 'user');
+        userInput.disabled = true;
+
+        const response = await getAssistantResponse(transcript);
+        addMessage(response, 'assistant');
+        userInput.disabled = false;
+        userInput.focus();
+    };
+
+    micButton.addEventListener('click', () => {
+        if (micButton.classList.contains('listening')) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    });
+} else {
+    micButton.style.display = 'none';
+    console.warn('Speech Recognition API not supported in this browser.');
+}
+
+// Initial greeting
+addMessage("Welcome! I'm Megoai, your virtual assistant. How can I help you?", 'assistant');
+</script>
+</body>
+</html>
+</content>
+</create_file>
+
+---
+
+### Python Backend (`app.py`)
+
+Save this as `app.py` in the same directory as the HTML fil
