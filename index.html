@@ -180,6 +180,18 @@
 </main>
 
 <script>
+  const sendQuery = async (userInput) => {
+  const response = await fetch("https://megoai-10.onrender.com", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ query: userInput })
+  });
+
+  const data = await response.json();
+  return data.response;
+};
 // Add message to chat window
 function addMessage(text, sender) {
     const chatMessages = document.getElementById('chatMessages');
